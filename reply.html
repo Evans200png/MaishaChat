@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MaishaChat - Health Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f8f4;
+      margin: 0;
+      padding: 0;
+    }
+    .chat-container {
+      max-width: 480px;
+      margin: 50px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      height: 80vh;
+    }
+    .chat-header {
+      background-color: #34a853;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-radius: 10px 10px 0 0;
+    }
+    .chat-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .chat-footer {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    .chat-footer input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+    }
+    .chat-footer button {
+      padding: 10px;
+      background-color: #34a853;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .message {
+      margin: 10px 0;
+    }
+    .bot {
+      color: #222;
+      background: #e3f6e8;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+    .user {
+      color: white;
+      background: #34a853;
+      padding: 8px 12px;
+      border-radius: 10px;
+      align-self: flex-end;
+      max-width: 80%;
+    }
+    .language-select {
+      margin: 10px;
+      text-align: center;
+    }
+    select {
+      font-size: 16px;
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h2>MaishaChat 🤖 - Your Health Assistant</h2>
+    </div>
+    <div class="language-select">
+      <label for="lang">Select Language / Chagua Lugha:</label><br /><br />
+      <select id="lang">
+        <option value="en">🇺🇸 English</option>
+        <option value="sw">🇰🇪 Kiswahili</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="ar">🇸🇦 العربية</option>
+      </select>
+    </div>
+    <div class="chat-body" id="chat-body">
+      <div class="message bot">Hi! I'm MaishaChat. How can I help you today?</div>
+    </div>
+    <div class="chat-footer">
+      <input type="text" id="user-input" placeholder="Type or speak your message..." />
+      <button onclick="startVoice()">🎤</button>
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+  <script>
+    const responses = {
+      fever: {
+        en: "It sounds like you may have a fever. Please rest, stay hydrated, and consider visiting a clinic if symptoms persist.",
+        sw: "Inaonekana una homa. Tafadhali pumzika, kunywa maji ya kutosha, na utembelee kliniki ikiwa dalili zitaendelea.",
+        fr: "Vous avez peut-être de la fièvre. Reposez-vous, buvez de l'eau et consultez un médecin si cela continue.",
+        ja: "熱があるようです。休養をとり、水分補給をして、必要なら病院へ行ってください。",
+        ar: "يبدو أنك تعاني من الحمى. يرجى الراحة وشرب الماء واستشارة الطبيب إذا استمرت الأعراض."
+      },
+      headache: {
+        en: "You may have a headache. Make sure you are hydrated and rest. See a doctor if it doesn't improve.",
+        sw: "Huenda una maumivu ya kichwa. Kunywa maji na upumzike. Tembelea daktari ikiwa hali haitabadilika.",
+        fr: "Vous avez peut-être mal à la tête. Buvez de l'eau et reposez-vous. Consultez un médecin si nécessaire.",
+        ja: "頭痛がするかもしれません。水を飲んで休んでください。必要であれば病院へ。",
+        ar: "قد تعاني من صداع. اشرب الماء واسترح. استشر الطبيب إذا لم تتحسن."
+      }
+    };
+
+    function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value.trim();
+      if (!message) return;
+
+      const lang = document.getElementById("lang").value;
+      const chatBody = document.getElementById("chat-body");
+
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.innerText = message;
+      chatBody.appendChild(userMsg);
+
+      input.value = "";
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      const botReply = document.createElement("div");
+      botReply.className = "message bot";
+
+      let response = "I'm not sure. Please consult a doctor.";
+      for (const key in responses) {
+        if (message.toLowerCase().includes(key)) {
+          response = responses[key][lang] || responses[key]['en'];
+          break;
+        }
+      }
+
+      botReply.innerText = response;
+      chatBody.appendChild(botReply);
+      speakReply(response);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function speakReply(text) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(text);
+      const lang = document.getElementById("lang").value;
+      const voiceMap = {
+        en: "en-US",
+        sw: "sw-KE",
+        fr: "fr-FR",
+        ja: "ja-JP",
+        ar: "ar-SA"
+      };
+      utter.lang = voiceMap[lang] || "en-US";
+      const voices = synth.getVoices();
+      const voice = voices.find(v => v.lang === utter.lang);
+      if (voice) utter.voice = voice;
+      synth.speak(utter);
+    }
+
+    function startVoice() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      const lang = document.getElementById("lang").value;
+      const voiceMap = {
+        en: "en-US",
+        sw: "sw-KE",
+        fr: "fr-FR",
+        ja: "ja-JP",
+        ar: "ar-SA"
+      };
+      recognition.lang = voiceMap[lang] || "en-US";
+      recognition.start();
+      recognition.onresult = function (event) {
+        document.getElementById("user-input").value = event.results[0][0].transcript;
+        sendMessage();
+      };
+    }
+
+    window.speechSynthesis.onvoiceschanged = () => {};
+  </script>
+</body>
+</html>
